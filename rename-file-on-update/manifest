@@ -1,0 +1,14 @@
+id: rename-file-on-update
+name: Rename File on Update
+metadata:
+  description: Renames files when they are updated in Stash.
+version: 0.1.0-6c0fc21
+date: "2025-11-03 01:38:54"
+requires: []
+source_repository: https://stash-of-awesomeness.github.io/stash-plugins/main/index.yml
+files:
+- rename_file_on_update.py
+- rename-file-on-update.yml
+- renamer.py
+- config_parser.py
+- file_manager.py

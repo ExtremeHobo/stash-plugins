@@ -1,0 +1,57 @@
+﻿name: Subtitle Markers
+description: >
+  Create scene markers from subtitle phrase matches. Edit phrase groups in
+  config.json next to this plugin (path shown in Config Path setting).
+version: 0.1.2
+exec:
+  - python
+  - "{pluginDir}/subtitle_markers.py"
+interface: raw
+
+settings:
+  configPath:
+    displayName: Config Path
+    description: >
+      Absolute path to phrase JSON, or relative to the plugin folder.
+      Default (leave blank): %USERPROFILE%\.stash\plugins\subtitle-markers\config.json
+      Edit that file to add marker titles and match phrases. Slash inside a word
+      means either alternative (going/gonna). Matching is case-insensitive after
+      normalizing punctuation and HTML tags.
+    type: STRING
+  primaryTagName:
+    displayName: Primary Tag Name
+    description: >
+      Stash requires a primary tag on every marker. This tag is created if missing.
+      Default: Subtitle Marker. Marker title still comes from the JSON "title".
+    type: STRING
+  dedupeWindowSeconds:
+    displayName: Dedupe Window (seconds)
+    description: >
+      Keep only the earliest same-title match in this window (seconds). Also skip
+      if a same-title Stash marker already exists within the window. Default 30.
+    type: NUMBER
+  maxScenes:
+    displayName: Max Scenes (0 = all)
+    description: >
+      Limit how many captioned scenes to process per run. Useful for testing.
+      Leave blank or 0 for all scenes that have captions in Stash.
+    type: NUMBER
+  sceneId:
+    displayName: Scene ID (optional)
+    description: >
+      If set, only process this scene ID (ignores Max Scenes). Clear after testing.
+    type: STRING
+
+tasks:
+  - name: Run Now
+    description: >
+      Scan captioned scenes, match subtitle cues to phrase groups in config.json,
+      and create markers. Always writes (use the Dry Run task to preview).
+    defaultArgs:
+      action: run-now
+
+  - name: Dry Run
+    description: >
+      Same scan as Run Now but only logs would-create matches; never writes markers.
+    defaultArgs:
+      action: dry-run

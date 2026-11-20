@@ -1,0 +1,44 @@
+﻿name: Export Clip
+description: >
+  Export an MP4 clip from the scene player. On a scene page use Set Begin /
+  Set End / Export Clip under the video (current playback time). Output folder
+  and ffmpeg path are global plugin settings — begin/end are per-scene only.
+version: 0.3.1
+exec:
+  - python
+  - "{pluginDir}/export_clip.py"
+interface: raw
+
+ui:
+  javascript:
+    - export_clip.js
+  css:
+    - export_clip.css
+
+settings:
+  outputDir:
+    displayName: Output Directory
+    description: >
+      Folder for exported MP4s. Leave blank for %USERPROFILE%\.stash\clips.
+      Use "beside-source" to write next to the scene video file.
+    type: STRING
+  ffmpegPath:
+    displayName: FFmpeg Path
+    description: >
+      Optional absolute path to ffmpeg.exe. Leave blank to auto-detect
+      (%USERPROFILE%\.stash\ffmpeg.exe, PATH, or common install locations).
+    type: STRING
+  forceReencode:
+    displayName: Force Re-encode
+    description: >
+      If enabled, always re-encode with H.264/AAC instead of trying stream copy first.
+      Slower but more accurate cuts at arbitrary timestamps.
+    type: BOOLEAN
+
+tasks:
+  - name: Locate FFmpeg
+    description: >
+      Log which ffmpeg binary would be used (no export). Useful after install
+      or when changing FFmpeg Path.
+    defaultArgs:
+      action: locate-ffmpeg

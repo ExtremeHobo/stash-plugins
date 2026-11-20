@@ -1,0 +1,17 @@
+id: stash-scheduler
+name: Stash Scheduler
+metadata:
+  description: Schedule automatic library scans with an optional identify pass after
+    each scan.
+version: 0.6.1-9fae7ec
+date: "2026-09-05 06:43:46"
+requires: []
+source_repository: https://stashapp.github.io/CommunityScripts/stable/index.yml
+files:
+- README.md
+- requirements.txt
+- startup\stash-scheduler.service
+- startup\autostart.sh
+- startup\autostart.bat
+- stash_scheduler.py
+- stash-scheduler.yml

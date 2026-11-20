@@ -1,0 +1,50 @@
+/* Loaded via plugin CSS; JS also injects a fallback style if this fails to apply */
+
+.export-clip-bar,
+#export-clip-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0.45rem 0 0.65rem;
+  padding: 0.5rem 0.65rem;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 0.25rem;
+  position: relative;
+  z-index: 5;
+}
+
+.export-clip-bar__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.5rem;
+}
+
+.export-clip-bar__time {
+  min-width: 4.5rem;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  opacity: 0.95;
+}
+
+.export-clip-bar__status {
+  font-size: 0.8rem;
+  opacity: 0.9;
+  word-break: break-all;
+}
+
+.export-clip-bar__status--error {
+  color: #f88;
+}
+
+@media (max-width: 576px) {
+  .export-clip-bar__controls {
+    gap: 0.35rem;
+  }
+
+  .export-clip-bar__time {
+    min-width: 3.5rem;
+  }
+}

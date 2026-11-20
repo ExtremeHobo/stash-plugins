@@ -1,0 +1,41 @@
+# Secrets / local Stash state — never commit
+**/config.yml
+**/*config.yml
+**/ApiKey*
+**/*apikey*
+**/*api_key*
+**/session*
+**/*cookie*
+**/hosts.yml
+.env
+.env.*
+*.pem
+*.key
+*.token
+
+# Runtime scheduler config (often holds connection/session data)
+**/stash-scheduler-config.json
+**/stash-scheduler-config.json.*
+
+# Local exports / media
+**/clips/
+**/*.mp4
+**/*.mkv
+**/*.avi
+**/*.wmv
+**/*.mov
+**/*.m4v
+**/*.webm
+
+# Backups / bytecode / OS junk
+**/*.bak
+**/*.bak-*
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+.idea/
+.vscode/
