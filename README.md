@@ -8,7 +8,7 @@ Personal / patched [Stash](https://github.com/stashapp/stash) plugins maintained
 | --- | --- |
 | [`subtitle-markers`](subtitle-markers/) | Create scene markers when subtitle cues match phrase groups in `config.json` |
 | [`export-clip`](export-clip/) | In-player begin/end controls to export an MP4 clip via ffmpeg |
-| [`stash-scheduler`](stash-scheduler/) | Community Stash Scheduler with Windows-oriented fixes (detached daemon / ApiKey persistence) |
+| [`stash-scheduler`](stash-scheduler/) | Community Stash Scheduler with Windows-oriented fixes (detached daemon / ApiKey persistence / `ensure-running.ps1` autostart, v0.6.4) |
 | [`rename-file-on-update`](rename-file-on-update/) | Rename files on scene update, including subtitle sidecar pairing fixes |
 
 ## Install

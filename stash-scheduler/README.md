@@ -47,7 +47,8 @@ plugins/
     ├── requirements.txt
     ├── startup/
     │   ├── autostart.sh        (Linux/macOS)
-    │   ├── autostart.bat       (Windows)
+    │   ├── autostart.bat       (Windows; delegates to ensure-running.ps1)
+    │   ├── ensure-running.ps1  (Windows; idempotent daemon recover)
     │   └── stash-scheduler.service  (systemd)
     └── README.md
 ```
@@ -187,17 +188,33 @@ Add this line (adjust paths):
 
 The `sleep 30` gives Stash time to start before the script tries to connect.
 
-#### Windows — Startup folder
+#### Windows — ensure-running.ps1 (recommended)
+
+`startup\autostart.bat` now delegates to `startup\ensure-running.ps1`, which:
+
+- Reads Stash port and `api_key` from `%USERPROFILE%\.stash\config.yml` (or an existing `%TEMP%\stash-scheduler-config.json`) — do not hard-code keys
+- Defaults to `http://127.0.0.1:9998` only when those files are missing
+- Uses `{ systemStatus { status } }` (not the invalid `{health}` query)
+- Starts the daemon with `python stash_scheduler.py --daemon` so recovery is not blocked behind a busy Identify/Scan plugin queue
+- Is idempotent if the daemon is already running
+
+**Startup folder**
 
 1. Press `Win + R`, type `shell:startup`, press Enter.
-2. Create a shortcut to `startup\autostart.bat` in that folder.
+2. Create a shortcut to `startup\autostart.bat` (or `ensure-running.ps1`) in that folder.
 3. The script will run each time you log in.
 
-Alternatively, use Task Scheduler to trigger `autostart.bat` on system startup (without needing a user session):
+**Task Scheduler (recommended for reboot + Stash-only restarts)**
 
-- Trigger: **At startup**
-- Action: Start `C:\path\to\plugins\stash-scheduler\startup\autostart.bat`
-- Check: **Run whether user is logged in or not**
+- Logon / At startup task: start `...\startup\autostart.bat`
+- Optional periodic ensure (e.g. every 5 minutes):  
+  `powershell -NoProfile -ExecutionPolicy Bypass -File "...\startup\ensure-running.ps1"`
+- Prefer **Run whether user is logged in or not** for the logon/startup task when possible
+
+Pass optional overrides only if needed:  
+`autostart.bat http://127.0.0.1:9998` or  
+`ensure-running.ps1 -StashUrl http://127.0.0.1:9998 -ApiKey <key>`  
+(never commit a real key).
 
 #### Docker / custom entrypoint
 
@@ -223,11 +240,11 @@ This triggers a scan (and identify, if enabled) immediately and marks itself com
 ## How It Works
 
 ```
-System boots → autostart script runs → polls until Stash is ready
+System boots → ensure-running / autostart polls until Stash is ready
                                               │
                                               ▼
-                               Calls runPluginTask via GraphQL
-                               to start "Start Scheduler" task
+                    Refreshes scheduler config, then starts daemon
+                    (python --daemon; optional runPluginTask if queue idle)
                                               │
                                               ▼
 stash_scheduler.py reads plugin settings from Stash API
@@ -296,6 +313,7 @@ All activity is written to the Stash log. To view it:
 
 | Version | Notes |
 |---|---|
+| 0.6.4 | Windows autostart fix: `ensure-running.ps1` (port/ApiKey from config.yml, systemStatus, direct `--daemon` start); `autostart.bat` delegates to it |
 | 0.6.0 | Added "Limit to Paths" setting — scan and identify can now be restricted to specific directories |
 | 0.5.0 | Fixed identify-after-scan (null jobQueue crash); added 9 scan generation flag settings (covers, previews, sprites, phashes, thumbnails, clip previews, force rescan) |
 | 0.4.0 | Added Check Status task; daemon logs written to file (`/tmp/stash-scheduler-daemon.log`) |
