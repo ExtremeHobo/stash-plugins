@@ -1,6 +1,7 @@
 from operator import itemgetter
 from stashapi.stashapp import StashInterface
 from stashapi import log
+import os
 import pathlib
 import re
 
@@ -10,6 +11,59 @@ mutation MoveFiles($input: MoveFilesInput!) {
     moveFiles(input: $input)
 }
 """
+
+
+def paths_equal(left: pathlib.Path | str, right: pathlib.Path | str) -> bool:
+    """Case-insensitive path equality for Windows/macOS default filesystems."""
+    return os.path.normcase(os.path.normpath(str(left))) == os.path.normcase(
+        os.path.normpath(str(right))
+    )
+
+
+def resolve_existing_path_casing(path: pathlib.Path) -> pathlib.Path:
+    """Rewrite path components to match existing filesystem casing.
+
+    Stash folder rows use exact basename/path strings. On case-insensitive
+    filesystems, a template like ``I:/Video/studios/...`` can create an orphan
+    ``studios`` folder beside ``Studios``, then UNIQUE-fail on
+    ``(parent_folder_id, basename)`` when a studio child already exists under
+    that orphan parent. Reusing on-disk casing lets moveFiles find the real
+    library folders instead of inserting duplicates.
+    """
+    path = pathlib.Path(path)
+    try:
+        path = path.absolute()
+    except OSError:
+        return path
+
+    parts = path.parts
+    if len(parts) <= 1:
+        return path
+
+    current = pathlib.Path(parts[0])
+    for idx in range(1, len(parts)):
+        part = parts[idx]
+        if not current.exists():
+            return current.joinpath(*parts[idx:])
+
+        matched_name = None
+        try:
+            for entry in current.iterdir():
+                if entry.name.casefold() == part.casefold():
+                    matched_name = entry.name
+                    break
+        except OSError as error:
+            log.warning(
+                f"Could not list {current} while resolving path casing: {error}"
+            )
+            return current.joinpath(*parts[idx:])
+
+        if matched_name is None:
+            return current.joinpath(*parts[idx:])
+
+        current = current / matched_name
+
+    return current
 
 
 def get_parent_studio_chain(stash, scene):
@@ -114,7 +168,12 @@ class StashFile:
             path = pathlib.Path(self.file_data["path"])
             directory_path = path.parent.absolute()
 
-        return directory_path
+        resolved = resolve_existing_path_casing(directory_path)
+        if str(resolved) != str(directory_path):
+            log.info(
+                f"Adjusted destination folder casing from {directory_path} to {resolved}"
+            )
+        return resolved
     
     def get_new_file_name(self) -> str:
         if not self.config.default_file_name_format:
@@ -197,23 +256,26 @@ class StashFile:
 
     def rename_file(self):
         old_path = self.get_old_file_path()
-        new_path = self.get_new_file_path()
+        new_folder = self.get_new_file_folder()
+        new_name = self.get_new_file_name()
+        new_path = new_folder / new_name
 
         if not old_path.exists():
             log.warning(f"File for scene does not exist on disk: {old_path}")
             return
 
-        if old_path == new_path:
+        if paths_equal(old_path, new_path):
             log.info("File paths are the same, no renaming needed.")
             return
 
         log.debug(f"Checking if a file exists at {new_path}")
-        while new_path.exists():
+        while new_path.exists() and not paths_equal(old_path, new_path):
             self.duplicate_index += 1
             log.warning(f"File already exists at {new_path}, adding duplicate suffix: {self.duplicate_index}")
-            new_path = self.get_new_file_path()
+            new_name = self.get_new_file_name()
+            new_path = new_folder / new_name
 
-            if old_path == new_path:
+            if paths_equal(old_path, new_path):
                 log.info("File paths are the same after adding duplicate suffix, no renaming needed.")
                 return
 
@@ -227,8 +289,8 @@ class StashFile:
             MOVE_FILE_MUTATION,
             {"input": {
                     "ids": [self.file_data["id"]],
-                    "destination_folder": self.get_new_file_folder(),
-                    "destination_basename": self.get_new_file_name(),
+                    "destination_folder": str(new_folder),
+                    "destination_basename": new_name,
                 }
             }
         )
